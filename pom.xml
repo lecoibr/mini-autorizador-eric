@@ -22,6 +22,8 @@
         <springdoc.version>2.9.1</springdoc.version>
         <jacoco.version>0.8.15</jacoco.version>
         <jacoco.cobertura.minima>0.90</jacoco.cobertura.minima>
+        <!-- Preenchido pelo JaCoCo (prepare-agent); declarado vazio para o build funcionar com -Djacoco.skip=true -->
+        <argLine></argLine>
     </properties>
 
     <dependencies>
@@ -112,6 +114,45 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!-- Expõe o caminho do jar do Mockito na propriedade ${org.mockito:mockito-core:jar}, usada abaixo
+                 para carregar o Mockito como agente Java: o JDK 21+ avisa (e versões futuras bloqueiam) a
+                 auto-anexação dinâmica de agentes que o inline mock maker faz por padrão -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>propriedades-dependencias</id>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                </configuration>
+            </plugin>
+            <!-- Testes de integração (*IT, com Testcontainers) rodam na fase integration-test e compartilham
+                 o agente do JaCoCo com o surefire, para que a cobertura some unitários e integração -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
