@@ -138,7 +138,41 @@ O cenário de concorrência (duas transações de R$ 10,00 ao mesmo tempo em um 
 
 ## 7. Decisões de projeto e desafios opcionais
 
-- **Pacotes por feature** (`cartao`, `transacao`, `seguranca`, `comum`, `config`): cada feature concentra controller, serviço, repositório, DTOs (`record`) e exceções.
+### Organização dos pacotes
+
+O projeto é organizado **por funcionalidade** (feature), e não por camada técnica: não existe uma pasta `controller/`, `service/` ou `repository/`. Cada controller fica dentro do pacote da funcionalidade a que pertence.
+
+```
+br.com.vr.miniautorizador
+├── MiniAutorizadorApplication.java
+│
+├── cartao/                          <- tudo sobre cartão
+│   ├── CartaoController.java        <- POST /cartoes e GET /cartoes/{numeroCartao}
+│   ├── CartaoService.java
+│   ├── CartaoRepository.java
+│   ├── Cartao.java                  (entidade)
+│   ├── CartaoRequest.java / CartaoResponse.java   (DTOs)
+│   ├── CartaoProperties.java
+│   └── CartaoJaExistenteException.java / CartaoNaoEncontradoException.java
+│
+├── transacao/                       <- tudo sobre autorização de transação
+│   ├── TransacaoController.java     <- POST /transacoes
+│   ├── TransacaoService.java
+│   ├── AutorizadorTransacao.java    (executa a cadeia de regras)
+│   ├── RegraAutorizacao.java        (interface) + RegraCartaoExistente, RegraSenhaValida, RegraSaldoSuficiente
+│   ├── ContextoAutorizacao.java, OrdemRegras.java, MotivoNaoAutorizacao.java
+│   ├── TransacaoRequest.java
+│   └── TransacaoNaoAutorizadaException.java / ConcorrenciaTransacaoException.java
+│
+├── seguranca/                       <- HTTP Basic e PasswordEncoder
+├── comum/                           <- @RestControllerAdvice (tradução de erros) e DTO de erro
+└── config/                          <- OpenAPI/Swagger e @EnableRetry
+```
+
+Na organização por camada, para entender "como funciona uma transação" você abre três ou quatro pastas diferentes. Na organização por feature, tudo o que diz respeito a transação está em um único lugar, e o pacote `transacao` não precisa saber nada de `cartao` além da entidade e do repositório. É uma escolha de desenho comum em projetos Spring modernos e facilita a leitura por quem avalia o código.
+
+### Demais decisões
+
 - **Chain of Responsibility** para as regras: `RegraCartaoExistente`, `RegraSenhaValida` e `RegraSaldoSuficiente` são beans com `@Order`; o `AutorizadorTransacao` recebe a lista ordenada e só itera. Uma regra nova é uma classe nova, sem tocar nas existentes.
 - **Entidade rica e imutável por fora**: `Cartao.possuiSaldoPara` e `Cartao.debitar` concentram a regra de saldo; não há setters.
 - **Flyway** versiona o schema; o Hibernate apenas valida (`ddl-auto: validate`).
