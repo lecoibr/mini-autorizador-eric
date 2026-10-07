@@ -1,0 +1,24 @@
+# Sobe a solução completa (banco + aplicação) com um único comando:
+#
+#   docker compose up --build
+#
+# O banco MySQL é o mesmo entregue no desafio (docker/docker-compose.yml), incluído aqui sem alterações.
+# A aplicação é construída a partir do Dockerfile da raiz e passa a responder em http://localhost:8080.
+
+include:
+  - docker/docker-compose.yml
+
+services:
+
+  mini-autorizador:
+    build: .
+    container_name: mini-autorizador
+    depends_on:
+      - mysql
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/miniautorizador?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      # Dentro do container não existe Docker, então o Spring não deve tentar subir o compose sozinho
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+    restart: on-failure

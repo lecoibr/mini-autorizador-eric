@@ -1,0 +1,11 @@
+target/
+.git/
+.idea/
+.vscode/
+*.iml
+*.log
+docker/
+compose.yaml
+start.cmd
+start.sh
+README.md

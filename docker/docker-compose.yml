@@ -2,18 +2,24 @@ version: "3.7"
 
 services:
 
-  mongo:
-    image: mongo:4.2
-    hostname: mongo
-    container_name: mongo
-    ports:
-      - 27017:27017
-    environment:
-      MONGO_INITDB_DATABASE: miniautorizador
-      MONGO_INITDB_ROOT_USERNAME: user
-      MONGO_INITDB_ROOT_PASSWORD: password
-    volumes:
-      - ./scripts/init.js:/docker-entrypoint-initdb.d/init.js:ro
+  # Banco não relacional disponibilizado no desafio. Não utilizado nesta solução (optou-se pelo MySQL),
+  # por isso o serviço foi deixado comentado, conforme permitido no enunciado.
+  #
+  # Observação: o volume abaixo referencia ./scripts/init.js, mas o arquivo entregue chama-se
+  # ./scripts/init.users. Caso o Mongo venha a ser usado, esse ponto precisa ser revisto.
+  #
+  # mongo:
+  #   image: mongo:4.2
+  #   hostname: mongo
+  #   container_name: mongo
+  #   ports:
+  #     - 27017:27017
+  #   environment:
+  #     MONGO_INITDB_DATABASE: miniautorizador
+  #     MONGO_INITDB_ROOT_USERNAME: user
+  #     MONGO_INITDB_ROOT_PASSWORD: password
+  #   volumes:
+  #     - ./scripts/init.js:/docker-entrypoint-initdb.d/init.js:ro
 
   mysql:
     image: mysql:5.7
