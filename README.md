@@ -3,7 +3,7 @@
 Solução para o teste técnico de Dev Back End da VR (enunciado em [`docs/DESAFIO.md`](docs/DESAFIO.md)): API REST em Spring Boot que **cria cartões** com saldo inicial de R$ 500,00, **consulta saldo** e **autoriza transações**, debitando o saldo quando as regras passam.
 
 - **Regras de autorização**, nesta ordem: o cartão existe → a senha confere → há saldo. A primeira que falhar nega a transação com o motivo (`CARTAO_INEXISTENTE`, `SENHA_INVALIDA` ou `SALDO_INSUFICIENTE`).
-- **Desafios opcionais atendidos**: código de produção **sem nenhum `if`** e **concorrência** resolvida com lock otimista no banco, válida para várias instâncias ([seção 7](#7-decisões-de-projeto-e-desafios-opcionais)).
+- **Desafios opcionais atendidos**: código **sem nenhum `if`** e **concorrência** resolvida com lock otimista no banco, válida para várias instâncias ([seção 7](#7-decisões-de-projeto-e-desafios-opcionais)).
 - **Credenciais da API** (HTTP Basic): usuário **`username`**, senha **`password`**.
 
 ## Sumário
@@ -43,7 +43,7 @@ As três opções compartilham o mesmo container `mysql` (projeto Compose `docke
 | Health | [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health) |
 | MySQL | `localhost:3306`, banco `miniautorizador`, usuário `root`, senha vazia (como no compose do desafio) |
 
-**Pelo Swagger UI**: clique no botão **Authorize** (cadeado, no alto à direita), preencha `username` / `password`, confirme e feche. Depois abra um endpoint, clique em **Try it out**, edite o JSON e em **Execute**. Swagger e health são as únicas rotas públicas.
+**Pelo Swagger UI**: clique no botão **Authorize** (cadeado, no alto à direita), preencha `username` / `password`, confirme e feche. Depois abra um endpoint, clique em **Try it out**, edite o JSON e em **Execute**. Swagger e health são as únicas rotas públicas. Observação: o Swagger UI formata números JSON e exibe o saldo `500.00` como `500`; o corpo real da resposta é `500.00`, como se vê no `curl` ou no Postman.
 
 ## 3. Testes automatizados
 
@@ -122,7 +122,7 @@ O cenário de concorrência (duas transações de R$ 10,00 ao mesmo tempo em um 
 
 ### Zero `if`
 
-O código de produção não tem `if`, `else`, ternário, `switch`, `break` nem `continue`. Em vez disso: `Optional.filter(...).orElseThrow(...)` para cada regra (ex.: `Optional.of(cartao).filter(c -> c.possuiSaldoPara(valor)).orElseThrow(() -> new TransacaoNaoAutorizadaException(SALDO_INSUFICIENTE))`), `forEach` para percorrer a cadeia de regras (a primeira que lança interrompe as demais), o próprio `enum MotivoNaoAutorizacao` como corpo da resposta e a constraint única do banco + `catch (DataIntegrityViolationException)` para a corrida entre dois `POST /cartoes` iguais. Para conferir: `Select-String -Path src\main\java -Recurse -Pattern "\bif\b|\belse\b|\bswitch\b"` não retorna nada.
+O código da aplicação (`src/main/java`) não tem `if`, `else`, ternário, `switch`, `break` nem `continue`; os testes usam `if` livremente quando necessário. Em vez disso: `Optional.filter(...).orElseThrow(...)` para cada regra (ex.: `Optional.of(cartao).filter(c -> c.possuiSaldoPara(valor)).orElseThrow(() -> new TransacaoNaoAutorizadaException(SALDO_INSUFICIENTE))`), `forEach` para percorrer a cadeia de regras (a primeira que lança interrompe as demais), o próprio `enum MotivoNaoAutorizacao` como corpo da resposta e a constraint única do banco + `catch (DataIntegrityViolationException)` para a corrida entre dois `POST /cartoes` iguais. Para conferir: `Select-String -Path src\main\java -Recurse -Pattern "\bif\b|\belse\b|\bswitch\b"` não retorna nada.
 
 ### Concorrência
 
