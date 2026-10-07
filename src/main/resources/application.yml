@@ -36,6 +36,12 @@ spring:
     virtual:
       enabled: true
 
+  # Mensagens de validação sempre em português, independentemente do locale do host/container
+  # ou do header Accept-Language enviado pelo cliente.
+  web:
+    locale: pt_BR
+    locale-resolver: fixed
+
 server:
   port: 8080
 
