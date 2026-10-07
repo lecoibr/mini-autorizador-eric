@@ -5,6 +5,12 @@
 # O banco MySQL é o mesmo entregue no desafio (docker/docker-compose.yml), incluído aqui sem alterações.
 # A aplicação é construída a partir do Dockerfile da raiz e passa a responder em http://localhost:8080.
 
+# O nome do projeto Compose é fixado em "docker" de propósito: é o nome que o Docker Compose deriva sozinho quando
+# o arquivo original é executado diretamente (docker compose -f docker/docker-compose.yml up) e também o que o
+# suporte a Docker Compose do Spring Boot usa ao subir o banco a partir desse arquivo. Com um único nome, as três
+# formas de subir a solução compartilham o mesmo container "mysql", sem conflito de nome nem de porta.
+name: docker
+
 include:
   - docker/docker-compose.yml
 
