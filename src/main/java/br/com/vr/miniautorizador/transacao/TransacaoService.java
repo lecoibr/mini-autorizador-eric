@@ -61,10 +61,23 @@ public class TransacaoService {
     }
 
     /**
-     * Chamado quando as tentativas se esgotam.
+     * Chamado quando as tentativas se esgotam por conflito de concorrência.
      */
     @Recover
     public void recuperar(final OptimisticLockingFailureException causa, final TransacaoRequest request) {
         throw new ConcorrenciaTransacaoException(request.numeroCartao(), causa);
+    }
+
+    /**
+     * Chamado quando uma tentativa termina com exceção que não é de concorrência, como uma regra de autorização
+     * negada na retentativa (o caso típico: a transação concorrente consumiu o saldo). Apenas a propaga.
+     *
+     * <p>Necessário porque, havendo métodos {@code @Recover}, o spring-retry exige um compatível com o tipo lançado;
+     * sem este, a negação de negócio seria convertida em {@code ExhaustedRetryException} (HTTP 500) em vez de 422.
+     * O spring-retry escolhe o método mais específico, então conflitos continuam caindo em {@link #recuperar}.</p>
+     */
+    @Recover
+    public void propagarFalhaNaoRetentavel(final RuntimeException causa, final TransacaoRequest request) {
+        throw causa;
     }
 }
