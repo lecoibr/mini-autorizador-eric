@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: mini-autorizador
+
+  # Conexão padrão com o MySQL declarado em docker/docker-compose.yml.
+  # Quando o suporte a Docker Compose do Spring Boot está ativo, estes valores são
+  # sobrescritos pelos dados do container iniciado automaticamente.
+  datasource:
+    url: jdbc:mysql://localhost:3306/miniautorizador?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: ""
+
+  jpa:
+    # O schema é versionado pelo Flyway; o Hibernate apenas valida se as entidades batem com ele.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    # Ao subir junto com o banco (docker compose up), o MySQL pode levar alguns segundos para aceitar conexões.
+    # O Flyway é o primeiro a tocar o banco, então ele absorve essa espera tentando reconectar (1 s entre tentativas).
+    connect-retries: 60
+    connect-retries-interval: 1
+
+  docker:
+    compose:
+      file: docker/docker-compose.yml
+      # start-only: sobe o banco se ainda não estiver rodando e NÃO o derruba quando a aplicação encerra,
+      # para que o banco continue disponível para a próxima execução.
+      lifecycle-management: start-only
+      skip:
+        in-tests: true
+
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8080
+
+mini-autorizador:
+  seguranca:
+    usuario: ${MINI_AUTORIZADOR_USUARIO:username}
+    senha: ${MINI_AUTORIZADOR_SENHA:password}
+  cartao:
+    saldo-inicial: 500.00
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
