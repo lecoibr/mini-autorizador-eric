@@ -64,7 +64,9 @@ Cada teste afirma estado final (saldo, versão da linha, hash persistido), corpo
 
 ## 4. Roteiro de avaliação
 
-Mesma ordem do enunciado. Os comandos usam `curl` (nativo no Windows 10/11, macOS e Linux); no PowerShell o `--%` faz as aspas do JSON chegarem intactas. Tudo pode ser feito também pelo Swagger UI.
+Mesma ordem do enunciado, com `curl` (nativo no Windows 10/11, macOS e Linux). Primeiro a versão **PowerShell** (o `--%` faz as aspas do JSON chegarem intactas), depois a mesma sequência em **bash** para Linux, macOS, Git Bash ou WSL. Tudo pode ser feito também pelo Swagger UI.
+
+**PowerShell (Windows)**
 
 ```powershell
 # 1. Criar cartão -> 201 com o mesmo JSON. Repetindo o comando -> 422 com o mesmo JSON (já existe)
@@ -86,6 +88,30 @@ curl.exe --% -i -u username:password -H "Content-Type: application/json" -d "{\"
 # Extras: sem credenciais -> 401; saldo de cartão inexistente -> 404 sem corpo
 curl.exe --% -i http://localhost:8080/cartoes/6549873025634501
 curl.exe --% -i -u username:password http://localhost:8080/cartoes/0000000000000000
+```
+
+**bash (Linux, macOS, Git Bash, WSL)**
+
+```bash
+# 1. Criar cartão -> 201 com o mesmo JSON. Repetindo o comando -> 422 com o mesmo JSON (já existe)
+curl -i -u username:password -H 'Content-Type: application/json' -d '{"numeroCartao":"6549873025634501","senha":"1234"}' http://localhost:8080/cartoes
+
+# 2. Saldo do cartão recém-criado -> 200, corpo 500.00
+curl -i -u username:password http://localhost:8080/cartoes/6549873025634501
+
+# 3. Transações de 100.00 -> 201 "OK" e saldo cai 100 a cada vez (confira com o comando 2).
+#    Na sexta chamada -> 422 "SALDO_INSUFICIENTE" e o saldo permanece 0.00
+curl -i -u username:password -H 'Content-Type: application/json' -d '{"numeroCartao":"6549873025634501","senhaCartao":"1234","valor":100.00}' http://localhost:8080/transacoes
+
+# 4. Senha inválida -> 422 "SENHA_INVALIDA", saldo inalterado
+curl -i -u username:password -H 'Content-Type: application/json' -d '{"numeroCartao":"6549873025634501","senhaCartao":"9999","valor":10.00}' http://localhost:8080/transacoes
+
+# 5. Cartão inexistente -> 422 "CARTAO_INEXISTENTE"
+curl -i -u username:password -H 'Content-Type: application/json' -d '{"numeroCartao":"0000000000000000","senhaCartao":"1234","valor":10.00}' http://localhost:8080/transacoes
+
+# Extras: sem credenciais -> 401; saldo de cartão inexistente -> 404 sem corpo
+curl -i http://localhost:8080/cartoes/6549873025634501
+curl -i -u username:password http://localhost:8080/cartoes/0000000000000000
 ```
 
 O cenário de concorrência (duas transações de R$ 10,00 ao mesmo tempo em um cartão com R$ 10,00) é reproduzido pelo teste `TransacaoConcorrenciaIT`, que dispara 10 e 20 requisições simultâneas contra o MySQL real.
